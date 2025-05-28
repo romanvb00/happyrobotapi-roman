@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Call Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h1>Call Analytics</h1>
+
+  <h2>Call Outcomes</h2>
+  <canvas id="outcomeChart" width="400" height="200"></canvas>
+
+  <h2>Sentiment</h2>
+  <canvas id="sentimentChart" width="400" height="200"></canvas>
+
+  <h2>Rate Comparison</h2>
+  <canvas id="rateChart" width="400" height="200"></canvas>
+
+  <script>
+    fetch('/calls', {
+      headers: {
+        'x-api-key': 'roman-for-happyrobot-2025'
+      }
+    })
+    .then(res => res.json())
+    .then(data => {
+      const outcomes = { Successful: 0, Unsuccessful: 0 };
+      const sentiments = {};
+      const rateLabels = [];
+      const initialRates = [];
+      const finalRates = [];
+
+      data.forEach(call => {
+        const outcome = call.outcome?.toLowerCase();
+        if (outcome === "successful") outcomes.Successful++;
+        else outcomes.Unsuccessful++;
+
+        const sentiment = call.sentiment || "Unknown";
+        sentiments[sentiment] = (sentiments[sentiment] || 0) + 1;
+
+        rateLabels.push("Load " + call.load_id);
+        initialRates.push(Number(call.initial_rate || 0));
+        finalRates.push(Number(call.final_rate || 0));
+      });
+
+      new Chart(document.getElementById('outcomeChart'), {
+        type: 'bar',
+        data: {
+          labels: Object.keys(outcomes),
+          datasets: [{
+            label: 'Call Outcomes',
+            data: Object.values(outcomes),
+            backgroundColor: ['green', 'red']
+          }]
+        }
+      });
+
+      new Chart(document.getElementById('sentimentChart'), {
+        type: 'pie',
+        data: {
+          labels: Object.keys(sentiments),
+          datasets: [{
+            label: 'Sentiment',
+            data: Object.values(sentiments),
+            backgroundColor: ['blue', 'gray', 'purple', 'yellow', 'pink']
+          }]
+        }
+      });
+
+      new Chart(document.getElementById('rateChart'), {
+        type: 'bar',
+        data: {
+          labels: rateLabels,
+          datasets: [
+            {
+              label: 'Initial Rate',
+              data: initialRates,
+              backgroundColor: 'blue'
+            },
+            {
+              label: 'Final Rate',
+              data: finalRates,
+              backgroundColor: 'orange'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    });
+  </script>
+</body>
+</html>
